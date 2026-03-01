@@ -1,0 +1,19 @@
+apiVersion: rbac.authorization.k8s.io/v1          # RBAC API group
+kind: ClusterRoleBinding                          # Binds cluster-wide permissions to an identity
+metadata:
+  name: "{{ .Release.Name }}-server"                # Binding name (usually prometheus-server)
+
+roleRef:                                          # "What permissions are we attaching?"
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: "{{ .Release.Name }}-server"                # The ClusterRole you created (read-only perms)
+
+subjects:                                         # "Who gets these permissions?"
+  - kind: ServiceAccount
+    name: "{{ .Release.Name }}-server"              # The ServiceAccount Prometheus runs as
+    namespace: {{ .Values.namespace }}            # Namespace where Prometheus is installed
+
+# SUMMARY:
+# This ClusterRoleBinding attaches the Prometheus ClusterRole (permissions)
+# to the Prometheus ServiceAccount (identity). This is what allows Prometheus
+# pods to discover Kubernetes resources and scrape metrics cluster-wide.    

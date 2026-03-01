@@ -1,0 +1,19 @@
+apiVersion: rbac.authorization.k8s.io/v1                  # RBAC API group
+kind: ClusterRoleBinding                                  # Binds a ClusterRole to a subject (cluster-wide)
+metadata:
+  name: "{{ .Release.Name }}-kube-state-metrics"            # Name of this binding
+
+roleRef:                                                  # The permission set we are granting
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: "{{ .Release.Name }}-kube-state-metrics"            # Must match the ClusterRole name
+
+subjects:                                                 # Who gets those permissions
+  - kind: ServiceAccount                                  # The identity used by the kube-state-metrics pod
+    name: "{{ .Release.Name }}-kube-state-metrics"
+    namespace: {{ .Values.namespace }}                    # Namespace where that ServiceAccount exists
+
+# SUMMARY:
+# This ClusterRoleBinding grants the kube-state-metrics ServiceAccount the ClusterRole permissions
+# needed to list/watch Kubernetes objects cluster-wide, so kube-state-metrics can expose their state
+# as Prometheus metrics.

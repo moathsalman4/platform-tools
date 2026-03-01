@@ -1,0 +1,61 @@
+apiVersion: apps/v1                                      # Workloads API
+kind: Deployment                                         # Good for stateless apps (kube-state-metrics is stateless)
+metadata:
+  name: "{{ .Release.Name }}-kube-state-metrics"           # Deployment name (Helm release scoped)
+  namespace: {{ .Values.namespace }}                     # Where it runs (ex: monitoring)
+
+spec:
+  replicas: 1                                            # One instance is usually enough
+  selector:
+    matchLabels:
+      app: "{{ .Release.Name }}-kube-state-metrics"        # Deployment manages pods with this label
+  template:
+    metadata:
+      labels:
+        app: "{{ .Release.Name }}-kube-state-metrics"      # Pod label (must match selector)
+      annotations:
+        prometheus.io/scrape: "true"                     # Prometheus will scrape pods that opt-in
+        prometheus.io/port: "8080"                       # Scrape port on the pod
+
+    spec:
+      serviceAccountName: "{{ .Release.Name }}-kube-state-metrics"  # Identity used to read Kubernetes API (RBAC)
+      securityContext:
+        runAsNonRoot: true                               # Basic hardening: no root user
+        runAsUser: 65534                                 # 65534 is typically "nobody"
+        fsGroup: 65534                                   # File permissions group (safe default)
+
+      containers:
+        - name: kube-state-metrics
+          image: "{{ .Values.kubeStateMetrics.image.repository }}:{{ .Values.kubeStateMetrics.image.tag }}"  # Image from values
+          ports:
+            - name: metrics
+              containerPort: 8080                        # Main Prometheus metrics endpoint
+            - name: telemetry
+              containerPort: 8081                        # Separate port for health/telemetry endpoints
+
+          livenessProbe:                                 # "Is the container still alive?"
+            httpGet:
+              path: /healthz
+              port: metrics                              # Check health on metrics port
+            initialDelaySeconds: 5
+            periodSeconds: 10
+
+          readinessProbe:                                # "Is the container ready to serve traffic?"
+            httpGet:
+              path: /
+              port: telemetry                            # Readiness on telemetry port
+            initialDelaySeconds: 5
+            periodSeconds: 10
+
+          resources:                                     # Resource requests/limits from values (so you can tune per env)
+            requests:
+              cpu: {{ .Values.kubeStateMetrics.resources.requests.cpu }}
+              memory: {{ .Values.kubeStateMetrics.resources.requests.memory }}
+            limits:
+              memory: {{ .Values.kubeStateMetrics.resources.limits.memory }}
+
+
+# SUMMARY:
+# This Deployment runs kube-state-metrics, which reads Kubernetes object state (pods, deployments, nodes, PVCs, etc.)
+# and exposes it as Prometheus metrics on port 8080. Prometheus discovers/scrapes it via the prometheus.io annotations.
+# RBAC is required (ServiceAccount + ClusterRole/Binding) so it can list/watch resources cluster-wide.

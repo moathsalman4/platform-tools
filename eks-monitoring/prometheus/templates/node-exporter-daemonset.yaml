@@ -1,0 +1,78 @@
+apiVersion: apps/v1                                              # Workloads API group
+kind: DaemonSet                                                  # Runs 1 pod on EACH node (best for node monitoring)
+metadata:
+  name: "{{ .Release.Name }}-node-exporter"                         # Name of daemonset (templated per Helm release)
+  namespace: {{ .Values.namespace }}                              # Where to deploy it (ex: monitoring)
+
+spec:
+  selector:
+    matchLabels:
+      app: "{{ .Release.Name }}-node-exporter"                       # DaemonSet manages pods with this label
+
+  template:
+    metadata:
+      labels:
+        app: "{{ .Release.Name }}-node-exporter"                     # Pod label used by selector + services
+      annotations:
+        prometheus.io/scrape: "true"                               # Prometheus should scrape this pod
+        prometheus.io/port: "9100"                                 # Metrics port exposed by node-exporter
+
+    spec:
+      hostNetwork: true                                            # Pod uses the node’s network namespace (sees node networking)
+      hostPID: true                                                # Pod can see host process IDs (sometimes needed for deeper metrics)
+
+      containers:
+        - name: node-exporter
+          image: "{{ .Values.nodeExporter.image.repository }}:{{ .Values.nodeExporter.image.tag }}"  # Node exporter image
+
+          args:
+            - "--path.procfs=/host/proc"                            # Tell exporter to read host /proc from this mount
+            - "--path.sysfs=/host/sys"                              # Tell exporter to read host /sys from this mount
+            - "--path.rootfs=/host/root"                            # Tell exporter host root filesystem is mounted here
+            - "--collector.filesystem.mount-points-exclude=^/(dev|proc|sys|var/lib/docker/.+)($|/)"  # Ignore noisy/virtual mounts
+
+          ports:
+            - name: metrics
+              containerPort: 9100                                   # Port inside the container for /metrics
+              hostPort: 9100                                        # Same port on the node itself (direct node-level port)
+
+          resources:
+            requests:
+              cpu: {{ .Values.nodeExporter.resources.requests.cpu }} # Guaranteed minimum CPU
+              memory: {{ .Values.nodeExporter.resources.requests.memory }} # Guaranteed minimum memory
+            limits:
+              memory: {{ .Values.nodeExporter.resources.limits.memory }}   # Hard memory cap
+
+          securityContext:
+            readOnlyRootFilesystem: true                             # Safer container: cannot write to its own root FS
+
+          volumeMounts:
+            - name: proc
+              mountPath: /host/proc                                  # Mount host /proc into container
+              readOnly: true
+            - name: sys
+              mountPath: /host/sys                                   # Mount host /sys into container
+              readOnly: true
+            - name: root
+              mountPath: /host/root                                  # Mount host / into container for filesystem stats
+              readOnly: true
+              mountPropagation: HostToContainer                       # Ensures host mount changes are visible inside container
+
+      tolerations:
+        - operator: Exists                                           # Allows scheduling onto tainted nodes (common in clusters)
+
+      volumes:
+        - name: proc
+          hostPath:
+            path: /proc                                              # Real host filesystem path
+        - name: sys
+          hostPath:
+            path: /sys                                               # Real host filesystem path
+        - name: root
+          hostPath:
+            path: /                                                  # Real host root filesystem
+
+
+# SUMMARY:
+# This DaemonSet runs Node Exporter on every node to expose OS-level metrics (CPU/memory/disk/filesystem/network).
+# It mounts the host’s /proc, /sys, and / so it can read real node stats, then exposes them on port 9100 for Prometheus to scrape.

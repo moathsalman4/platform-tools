@@ -1,0 +1,56 @@
+# values.yaml
+# This file is the “settings” for your custom Prometheus Helm chart.
+# Templates read these values using .Values.* and render Kubernetes manifests.
+
+namespace: monitoring            # Namespace where EVERYTHING in this chart will be deployed.
+
+# Prometheus “global” settings (from prometheus.yml in your ConfigMap)
+scrapeInterval: 30s             # How often Prometheus scrapes targets (pulls metrics).
+evaluationInterval: 30s         # How often Prometheus evaluates rules/alerts (if you add any later).
+
+server:
+  replicas: 1                   # Number of Prometheus server pods (StatefulSet replicas). 1 is typical for simple setups.
+  image:
+    repository: prom/prometheus # Container image repo for Prometheus server.
+    tag: v2.53.0                # Prometheus version to run (this is what actually controls runtime version).
+  retention: 7d                 # How long Prometheus keeps metrics data before deleting old data.
+  storage:
+    size: 5Gi                   # Persistent volume size for time-series DB (TSDB) data.
+    storageClass: gp2           # StorageClass to use for the PVC (EBS gp2 on EKS). (If your cluster uses gp3, change it.)
+  resources:
+    requests:                   # Minimum resources Kubernetes reserves so the pod can be scheduled reliably.
+      cpu: 100m                 # 0.1 CPU reserved.
+      memory: 256Mi             # 256Mi RAM reserved.
+    limits:                     # Hard ceiling (K8s will OOMKill if memory exceeds this).
+      memory: 512Mi             # Prometheus cannot use more than 512Mi RAM.
+
+nodeExporter:
+  # Node Exporter runs as a DaemonSet (one pod per node) to expose node-level metrics (CPU, disk, mem, etc.)
+  image:
+    repository: prom/node-exporter
+    tag: v1.8.1
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      memory: 128Mi
+
+kubeStateMetrics:
+  # Kube-State-Metrics runs as a Deployment and exports Kubernetes object state as metrics
+  # (Deployments, Pods, HPA, Nodes, etc.) — NOT node CPU/mem usage.
+  image:
+    repository: registry.k8s.io/kube-state-metrics/kube-state-metrics
+    tag: v2.12.0
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      memory: 256Mi
+
+# MINI SUMMARY:
+# - This values file controls where Prometheus runs (namespace), how often it scrapes, and how long it stores data.
+# - server.* configures the Prometheus StatefulSet (image/version, retention, EBS storage, CPU/memory).
+# - nodeExporter.* configures the DaemonSet that exposes node OS metrics.
+# - kubeStateMetrics.* configures the Deployment that exposes Kubernetes “object state” metrics.

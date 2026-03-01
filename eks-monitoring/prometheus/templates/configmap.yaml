@@ -1,0 +1,261 @@
+# This file is the Prometheus “brain”.
+# Your StatefulSet runs the Prometheus container.
+# This ConfigMap gives Prometheus its main config file: prometheus.yml.
+# This file tells Prometheus how often to scrape and what targets to scrape.
+
+apiVersion: v1
+kind: ConfigMap   # “Create a Kubernetes ConfigMap”
+metadata:
+  name: "{{ .Release.Name }}-server-config" # Name the ConfigMap based on the Helm release name
+  namespace: {{ .Values.namespace }} # Put the ConfigMap in the same namespace as the Prometheus StatefulSet
+data: # The data section contains the actual configuration file for Prometheus
+  prometheus.yml: | # So this ConfigMap creates a “file” named prometheus.yml inside the ConfigMap. The content of this file is the Prometheus configuration.
+    global: 
+      scrape_interval: {{ .Values.scrapeInterval }}
+      evaluation_interval: {{ .Values.evaluationInterval }}
+
+    scrape_configs:
+      # API Server
+      - job_name: kubernetes-apiservers
+        kubernetes_sd_configs:
+          - role: endpoints
+        scheme: https
+        tls_config:
+          ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+          insecure_skip_verify: true
+        bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
+        relabel_configs:
+          - source_labels: [__meta_kubernetes_namespace, __meta_kubernetes_service_name, __meta_kubernetes_endpoint_port_name]
+            action: keep
+            regex: default;kubernetes;https
+
+      # Kubelet
+      - job_name: kubernetes-nodes
+        kubernetes_sd_configs:
+          - role: node
+        scheme: https
+        tls_config:
+          ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+          insecure_skip_verify: true
+        bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
+        relabel_configs:
+          - action: labelmap
+            regex: __meta_kubernetes_node_label_(.+)
+
+      # cAdvisor (container metrics)
+      - job_name: kubernetes-nodes-cadvisor
+        kubernetes_sd_configs:
+          - role: node
+        scheme: https
+        tls_config:
+          ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+          insecure_skip_verify: true
+        bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
+        metrics_path: /metrics/cadvisor
+        relabel_configs:
+          - action: labelmap
+            regex: __meta_kubernetes_node_label_(.+)
+
+      # Service Endpoints (anything with prometheus.io annotations)
+      - job_name: kubernetes-service-endpoints
+        kubernetes_sd_configs:
+          - role: endpoints
+        relabel_configs:
+          - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_scrape]
+            action: keep
+            regex: "true"
+          - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_path]
+            action: replace
+            target_label: __metrics_path__
+            regex: (.+)
+          - source_labels: [__address__, __meta_kubernetes_service_annotation_prometheus_io_port]
+            action: replace 
+            regex: ([^:]+)(?::\d+)?;(\d+)
+            replacement: $1:$2
+            target_label: __address__
+          - action: labelmap
+            regex: __meta_kubernetes_service_label_(.+)
+          - source_labels: [__meta_kubernetes_namespace]
+            action: replace
+            target_label: namespace
+          - source_labels: [__meta_kubernetes_service_name]
+            action: replace
+            target_label: service
+
+      # Pods (anything with prometheus.io annotations)
+      - job_name: kubernetes-pods
+        kubernetes_sd_configs:
+          - role: pod
+        relabel_configs:
+          - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]
+            action: keep
+            regex: "true"
+          - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_path]
+            action: replace
+            target_label: __metrics_path__
+            regex: (.+)
+          - source_labels: [__address__, __meta_kubernetes_pod_annotation_prometheus_io_port]
+            action: replace
+            regex: ([^:]+)(?::\d+)?;(\d+)
+            replacement: $1:$2
+            target_label: __address__
+          - action: labelmap
+            regex: __meta_kubernetes_pod_label_(.+)
+          - source_labels: [__meta_kubernetes_namespace]
+            action: replace
+            target_label: namespace
+          - source_labels: [__meta_kubernetes_pod_name]
+            action: replace
+            target_label: pod
+
+      # CoreDNS
+      - job_name: coredns
+        kubernetes_sd_configs:
+          - role: endpoints
+        relabel_configs:
+          - source_labels: [__meta_kubernetes_namespace, __meta_kubernetes_service_name]
+            action: keep
+            regex: kube-system;kube-dns
+          - source_labels: [__meta_kubernetes_endpoint_port_name]
+            action: keep
+            regex: metrics
+
+      # Node Exporter
+      - job_name: node-exporter
+        kubernetes_sd_configs:
+          - role: endpoints
+        relabel_configs:
+          - source_labels: [__meta_kubernetes_namespace, __meta_kubernetes_service_name]
+            action: keep
+            regex: {{ .Values.namespace }};{{ .Release.Name }}-node-exporter
+
+      # Kube State Metrics
+      - job_name: kube-state-metrics
+        kubernetes_sd_configs:
+          - role: endpoints
+        relabel_configs:
+          - source_labels: [__meta_kubernetes_namespace, __meta_kubernetes_service_name]
+            action: keep
+            regex: {{ .Values.namespace }};{{ .Release.Name }}-kube-state-metrics
+
+
+
+
+
+
+# global: How often Prometheus should scrape metrics and evaluate rules. 
+#   scrape_interval: {{ .Values.scrapeInterval }} # how often Prometheus collects metrics from targets (like every 15s, 30s).
+#   evaluation_interval: {{ .Values.evaluationInterval }} how often Prometheus evaluates rules (alerts/recording rules)
+
+# scrape_configs: This section is a list of “jobs”.
+# Each job = “Prometheus, go find these targets and scrape them”.
+
+# - job_name: kubernetes-apiservers: job_name: label used inside Prometheus UI (Targets page).
+#   kubernetes_sd_configs: kubernetes_sd_configs: means Kubernetes service discovery.
+#     - role: endpoints: Prometheus will look at Kubernetes Endpoints objects (services that have endpoints behind them).
+
+
+# This is how Prometheus authenticates to scrape the API server:
+# scheme: https # means Prometheus will use HTTPS to connect to the API server.
+# tls_config: # TLS configuration for secure communication.
+#   ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt # tells Prometheus to use the CA certificate provided by Kubernetes to verify the API server’s TLS certificate.
+#   insecure_skip_verify: true # means Prometheus will not verify the API server’s TLS certificate. This is often used in development or if the API server uses a self-signed certificate. In production, you would typically set this to false and ensure the CA certificate is correct.
+# bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token # tells Prometheus to use the service account token for authentication when scraping the API server. This token is automatically mounted in the Prometheus pod by Kubernetes.
+
+
+# This is a filter, Prometheus discovers a lot of endpoints. 
+# This says: “ONLY keep the one that matches:
+# - namespace: default
+# - service name: kubernetes
+# - port name: https
+# relabel_configs:
+#   - source_labels: [__meta_kubernetes_namespace, __meta_kubernetes_service_name, __meta_kubernetes_endpoint_port_name]
+#     action: keep
+#     regex: default;kubernetes;https
+# That’s how you specifically scrape the API server endpoint.
+
+
+# - job_name: kubernetes-nodes
+#   kubernetes_sd_configs: 
+#     - role: node # means Prometheus will look at Kubernetes Node objects to find targets.
+# relabel_configs:
+#   - action: labelmap # means take Kubernetes node labels and turn them into Prometheus labels. 
+#     regex: __meta_kubernetes_node_label_(.+) # This regex captures all node labels and adds them as Prometheus labels to the metrics scraped from the nodes. 
+# For example, if a node has a label “node-role.kubernetes.io/worker=”, then Prometheus will add a label “node-role.kubernetes.io/worker=” to all metrics scraped from that node. 
+# This allows you to filter and aggregate metrics based on node labels in Prometheus queries.
+
+# - job_name: kubernetes-nodes-cadvisor
+#   ...
+#   metrics_path: /metrics/cadvisor # means Prometheus will scrape the cAdvisor metrics endpoint on the nodes.
+# cAdvisor provides container-level metrics like CPU, memory, network usage for each container running on the node.
+
+# - job_name: kubernetes-service-endpoints # This job discovers Kubernetes services that have specific annotations to indicate they should be scraped by Prometheus.
+#   kubernetes_sd_configs:
+#     - role: endpoints # means Prometheus will look at Kubernetes Endpoints objects to find targets.
+# - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_scrape] # means look at the Kubernetes service annotation “prometheus.io/scrape”.  
+#   action: keep # means only keep targets where this annotation exists and has the value “true”.
+#   regex: "true"
+
+# - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_path] # means look at the Kubernetes service annotation “prometheus.io/path” to determine the metrics path to scrape for that service.
+#   action: replace # means replace the default metrics path (/metrics) with the value from the annotation.
+#   target_label: __metrics_path__ # means the value from the annotation will be used as the new metrics path for scraping that service.
+#   regex: (.+) # captures the value of the annotation (e.g., /custom-metrics) and uses it as the new metrics path.
+
+# - source_labels: [__address__, __meta_kubernetes_service_annotation_prometheus_io_port] # means look at the Kubernetes service annotation “prometheus.io/port” to determine the port to scrape for that service.
+#   action: replace # means replace the default port in the target address with the value from the annotation.
+#   regex: ([^:]+)(?::\d+)?;(\d+) # This regex captures the existing address (without the port) and the new port from the annotation.
+#   replacement: $1:$2 # means construct the new target address by combining the existing address (captured as $1) with the new port (captured as $2).
+#   target_label: __address__ # means the new target address will be used for scraping that service.
+
+# - action: labelmap 
+#   regex: __meta_kubernetes_service_label_(.+) # means take all Kubernetes service labels and turn them into Prometheus labels.
+
+# - source_labels: [__meta_kubernetes_namespace] # means look at the Kubernetes namespace of the service and add it as a label to the scraped metrics.
+#   action: replace # means replace the default value of the “namespace” label with the value from the Kubernetes namespace.
+#   target_label: namespace # means the value from the Kubernetes namespace will be used as the value for the “namespace” label in Prometheus. 
+# - source_labels: [__meta_kubernetes_service_name] # means look at the Kubernetes service name and add it as a label to the scraped metrics.
+#   action: replace # means replace the default value of the “service” label with the value from the Kubernetes service name.
+#   target_label: service # means the value from the Kubernetes service name will be used as the value for the “service” label in Prometheus.
+
+# - job_name: kubernetes-pods # This job discovers Kubernetes pods that have specific annotations to indicate they should be scraped by Prometheus.
+#   kubernetes_sd_configs: # means use Kubernetes service discovery to find targets for this job.
+#     - role: pod # means Prometheus will look at Kubernetes Pod objects to find targets.
+
+# prometheus.io/scrape: "true" is a Kubernetes annotation that you can add to your services or pods to indicate that Prometheus should scrape metrics from them.
+# prometheus.io/port: "8080" is a Kubernetes annotation that you can add to your services or pods to specify the port that Prometheus should scrape for metrics. If you have multiple ports, you can use this annotation to tell Prometheus which one to use.
+# prometheus.io/path: "/metrics" is a Kubernetes annotation that you can add to your services or pods to specify the metrics path that Prometheus should scrape. By default, Prometheus scrapes the /metrics endpoint, but if your application exposes metrics on a different path, you can use this annotation to tell Prometheus where to find them.
+
+# - job_name: coredns # This job discovers the CoreDNS service in the kube-system namespace and scrapes its metrics endpoint.
+#   kubernetes_sd_configs: # means use Kubernetes service discovery to find targets for this job.
+#     - role: endpoints # means Prometheus will look at Kubernetes Endpoints objects to find targets.
+
+# - source_labels: [__meta_kubernetes_namespace, __meta_kubernetes_service_name] # means look at the Kubernetes namespace and service name of the endpoints to filter for the CoreDNS service.
+#   action: keep # means only keep targets that match the specified namespace and service name.
+#   regex: kube-system;kube-dns # means the target must be in the “kube-system” namespace and have the service name “kube-dns” to be scraped by this job.
+
+# - source_labels: [__meta_kubernetes_endpoint_port_name] # means look at the port name of the endpoints to filter for the CoreDNS metrics endpoint.
+#   action: keep  # means only keep targets that have the specified port name.
+#   regex: metrics # means the target must have an endpoint port named “metrics” to be scraped by this job. This is a common convention for the CoreDNS metrics endpoint.
+
+# - job_name: node-exporter # This job discovers the Node Exporter service in the same namespace as Prometheus and scrapes its metrics endpoint.
+#   kubernetes_sd_configs:
+#     - role: endpoints # means Prometheus will look at Kubernetes Endpoints objects to find targets for this job.
+#   relabel_configs: 
+#     - source_labels: [__meta_kubernetes_namespace, __meta_kubernetes_service_name] # means look at the Kubernetes namespace and service name of the endpoints to filter for the Node Exporter service.
+#       action: keep # means only keep targets that match the specified namespace and service name.
+#       regex: {{ .Values.namespace }};{{ .Release.Name }}-node-exporter # means the target must be in the same namespace as Prometheus and have a service name that matches the pattern “<release-name>-node-exporter” to be scraped by this job.
+
+# - job_name: kube-state-metrics # This job discovers the kube-state-metrics service in the same namespace as Prometheus and scrapes its metrics endpoint.
+#   ... 
+#   regex: {{ .Values.namespace }};{{ .Release.Name }}-kube-state-metrics # means the target must be in the same namespace as Prometheus and have a service name that matches the pattern “<release-name>-kube-state-metrics” to be scraped by this job. This is typically the service created by the kube-state-metrics Helm chart.
+
+# This single file ensures Prometheus collects:
+# ✅ Cluster control-plane insights (API server)
+# ✅ Node metrics (kubelet)
+# ✅ Container metrics (cAdvisor)
+# ✅ DNS metrics (CoreDNS)
+# ✅ Kubernetes object metrics (kube-state-metrics)
+# ✅ Machine-level node metrics (node-exporter)
+# ✅ Any app that opts-in using annotations (pods/services)
+
+# That’s basically your “Datadog replacement baseline”.

@@ -1,0 +1,88 @@
+apiVersion: apps/v1                                   # Apps API for running workloads
+kind: StatefulSet                                      # Like a Deployment, but designed for stable identity + storage
+metadata:
+  name: "{{ .Release.Name }}-server"                     # Prometheus server workload name
+  namespace: {{ .Values.namespace }}                   # Where Prometheus runs (ex: monitoring)
+
+spec:
+  serviceName: "{{ .Release.Name }}-server-headless"     # Headless service used by StatefulSet for stable pod DNS
+  replicas: {{ .Values.server.replicas }}              # How many Prometheus pods you want (often 1 in dev)
+
+  selector:
+    matchLabels:
+      app: "{{ .Release.Name }}-server"                  # Must match the pod template labels below (VERY important)
+
+  template:
+    metadata:
+      labels:
+        app: "{{ .Release.Name }}-server"                # Label used by Service selector + StatefulSet selector
+    spec:
+      serviceAccountName: "{{ .Release.Name }}-server"   # Pod identity (used to talk to K8s API for discovery/scraping)
+
+      securityContext:
+        fsGroup: 65534                                 # Makes mounted volumes writable by the group (nobody)
+        runAsNonRoot: true                             # Safety: do not run container as root
+        runAsUser: 65534                               # Run as user "nobody" inside container
+
+      containers:
+        - name: prometheus                             # Container name inside the pod
+          image: "{{ .Values.server.image.repository }}:{{ .Values.server.image.tag }}"  # Prometheus image
+
+          args:                                        # Prometheus startup flags
+            - "--config.file=/etc/prometheus/prometheus.yml"                 # Use config mounted from ConfigMap
+            - "--storage.tsdb.path=/prometheus"                              # Store metrics DB here (PVC)
+            - "--storage.tsdb.retention.time={{ .Values.server.retention }}" # How long to keep metrics
+            - "--web.enable-lifecycle"                                       # Allows POST /-/reload (reload config)
+
+          ports:
+            - name: http                               # Named port so Services/probes can reference "http"
+              containerPort: 9090                      # Prometheus web UI + API port
+
+          livenessProbe:                               # Checks if Prometheus is alive (restart if not)
+            httpGet:
+              path: /-/healthy                         # Built-in health endpoint
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 15
+
+          readinessProbe:                              # Checks if Prometheus is ready to serve traffic
+            httpGet:
+              path: /-/ready                           # Built-in ready endpoint
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+
+          resources:                                   # CPU/memory sizing (avoid OOM + allow scheduling)
+            requests:
+              cpu: {{ .Values.server.resources.requests.cpu }}
+              memory: {{ .Values.server.resources.requests.memory }}
+            limits:
+              memory: {{ .Values.server.resources.limits.memory }}           # Memory limit (Prometheus can be memory heavy)
+
+          volumeMounts:
+            - name: config                             # Mount the ConfigMap with prometheus.yml
+              mountPath: /etc/prometheus
+            - name: storage                            # Mount the persistent volume for TSDB data
+              mountPath: /prometheus
+
+      volumes:
+        - name: config                                 # Volume definition for config
+          configMap:
+            name: "{{ .Release.Name }}-server-config"    # Must match the ConfigMap name that contains prometheus.yml
+
+  volumeClaimTemplates:                                # Automatically creates a PVC per pod for persistent storage
+    - metadata:
+        name: storage                                  # Must match the volumeMount name "storage"
+      spec:
+        accessModes: ["ReadWriteOnce"]                 # Typical for EBS: mounted by one node at a time
+        storageClassName: {{ .Values.server.storage.storageClass }}  # Which StorageClass to use (ex: gp3)
+        resources:
+          requests:
+            storage: {{ .Values.server.storage.size }} # Size of the Prometheus disk (ex: 10Gi, 20Gi)
+
+
+# SUMMARY:
+# This StatefulSet runs the Prometheus server as a stateful workload.
+# It mounts a ConfigMap for prometheus.yml (scrape config) and a PersistentVolume for TSDB data storage,
+# so metrics survive pod restarts. It uses a ServiceAccount for in-cluster auth to scrape Kubernetes targets,
+# and readiness/liveness probes ensure Kubernetes only routes traffic when Prometheus is healthy/ready.            

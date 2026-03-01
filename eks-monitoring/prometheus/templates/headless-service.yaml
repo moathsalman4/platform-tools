@@ -1,0 +1,19 @@
+apiVersion: v1                                  # Core Kubernetes API
+kind: Service                                   # Provides stable networking + DNS
+metadata:
+  name: "{{ .Release.Name }}-server-headless"     # Headless service used by the StatefulSet
+  namespace: {{ .Values.namespace }}            # Same namespace as Prometheus (ex: monitoring)
+
+spec:
+  clusterIP: None                               # Headless: no single service IP, DNS returns pod IPs
+  selector:
+    app: "{{ .Release.Name }}-server"             # Must match pod label in StatefulSet template
+  ports:
+    - name: http                                # Named port (matches container port name)
+      port: 9090                                # Service port inside cluster
+      targetPort: http                          # Routes to container port named "http" (9090)      
+
+# SUMMARY:
+# This is a headless Service (clusterIP: None) used by the StatefulSet for stable DNS per pod.
+# Instead of one shared Service IP, it creates DNS records that point directly to the Prometheus pod(s),
+# which is how StatefulSets get predictable networking identity (ex: prometheus-server-0).

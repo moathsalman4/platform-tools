@@ -1,0 +1,33 @@
+apiVersion: rbac.authorization.k8s.io/v1        # RBAC API group
+kind: ClusterRole                               # Cluster-wide permissions (not namespace-scoped)
+metadata:
+  name: "{{ .Release.Name }}-server"              # Role name (usually prometheus-server)
+
+rules:
+
+  # Allow Prometheus to discover core cluster resources
+  - apiGroups: [""]                             # "" = core API group
+    resources:
+      - nodes                                   # Needed to scrape kubelet + node metrics
+      - nodes/proxy                             # Required for accessing kubelet endpoints
+      - nodes/metrics                           # Node metrics endpoint
+      - services                                # Discover service endpoints
+      - endpoints                               # Discover actual pod endpoints
+      - pods                                    # Discover pods for scraping
+    verbs: ["get", "list", "watch"]             # Read-only access (safe for monitoring)
+
+  # Allow Prometheus to discover Ingress resources
+  - apiGroups: ["extensions", "networking.k8s.io"]
+    resources:
+      - ingresses                               # Used to discover ingress-based services
+    verbs: ["get", "list", "watch"]             # Read-only access
+
+  # Allow access to /metrics endpoints (non-resource URL)
+  - nonResourceURLs: ["/metrics"]               # Needed for some control plane metrics
+    verbs: ["get"]                              # Read-only access
+
+# SUMMARY:
+# This ClusterRole grants Prometheus read-only permissions to discover
+# nodes, pods, services, endpoints, and ingresses across the cluster.
+# These permissions enable Kubernetes service discovery and allow
+# Prometheus to scrape metrics from cluster components safely.
