@@ -1,0 +1,71 @@
+apiVersion: rbac.authorization.k8s.io/v1           # RBAC API group
+kind: ClusterRole                                   # Cluster-wide read permissions
+metadata:
+  name: "{{ .Release.Name }}-kube-state-metrics"      # Name of this permission set
+
+rules:
+  # Core Kubernetes resources (apiGroup "")
+  - apiGroups: [""]                                  # "" = core API group
+    resources:
+      - configmaps                                   # read config objects
+      - secrets                                      # read secret metadata/state (not values exposed by KSM, but API access is needed)
+      - nodes                                        # node objects (labels, readiness, etc.)
+      - pods                                         # pod state (phase, restarts, etc.)
+      - services                                     # service state/endpoints mapping
+      - serviceaccounts                              # SA objects
+      - resourcequotas                               # quota usage/limits
+      - replicationcontrollers                       # legacy workload objects
+      - limitranges                                  # namespace limits
+      - persistentvolumeclaims                       # PVC status/size/binding
+      - persistentvolumes                            # PV status/capacity
+      - namespaces                                   # namespace labels/status
+      - endpoints                                    # endpoints ready/not ready
+    verbs: ["list", "watch"]                         # list+watch = continuously observe state changes
+
+  # Workloads in the apps API group
+  - apiGroups: ["apps"]
+    resources:
+      - statefulsets                                 # desired vs current replicas, etc.
+      - daemonsets
+      - deployments
+      - replicasets
+    verbs: ["list", "watch"]
+
+  # Batch jobs
+  - apiGroups: ["batch"]
+    resources:
+      - cronjobs
+      - jobs
+    verbs: ["list", "watch"]
+
+  # Autoscaling resources (HPAs)
+  - apiGroups: ["autoscaling"]
+    resources:
+      - horizontalpodautoscalers
+    verbs: ["list", "watch"]
+
+  # Networking resources
+  - apiGroups: ["networking.k8s.io"]
+    resources:
+      - networkpolicies
+      - ingresses
+    verbs: ["list", "watch"]
+
+  # Policy resources (availability / disruptions)
+  - apiGroups: ["policy"]
+    resources:
+      - poddisruptionbudgets
+    verbs: ["list", "watch"]
+
+  # Storage resources
+  - apiGroups: ["storage.k8s.io"]
+    resources:
+      - storageclasses
+      - volumeattachments
+    verbs: ["list", "watch"]
+
+
+# SUMMARY:
+# This ClusterRole gives kube-state-metrics read-only access (list/watch) to Kubernetes objects
+# across the cluster. kube-state-metrics converts the "state" of those objects (pods, deployments,
+# HPAs, PVCs, etc.) into metrics that Prometheus scrapes for Grafana dashboards.    

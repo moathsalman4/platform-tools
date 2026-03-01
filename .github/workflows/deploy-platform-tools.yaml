@@ -1,0 +1,121 @@
+name: "Workflow - Deploy Platform Tools"
+
+on:
+  push:
+    branches:
+      - feature/**
+      - main
+  workflow_dispatch:
+    inputs:
+      stage:
+        description: "Environment (dev/staging/prod)"
+        required: true
+        default: "dev"
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  AWS_REGION: us-east-1
+  CLUSTER_NAME: projectx_cluster_ubuntu25b
+
+jobs:
+  deploy-platform-tools:
+    runs-on: ubuntu-latest
+
+    # Use GitHub Environments so vars.IAM_ROLE is accessible.
+    environment: dev
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup kubectl
+        uses: azure/setup-kubectl@v4
+        with:
+          version: "v1.29.0"
+
+      - name: Setup Helm
+        uses: azure/setup-helm@v4
+        with:
+          version: "v3.14.0"
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.IAM_ROLE }}
+          role-session-name: GitHubActionsPlatformTools
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Verify identity
+        run: aws sts get-caller-identity
+
+      - name: Pick stage (push vs manual)
+        id: vars
+        run: |
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            echo "stage=${{ inputs.stage }}" >> $GITHUB_OUTPUT
+          else
+            echo "stage=dev" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Login to EKS - update kubeconfig
+        run: |
+          aws eks update-kubeconfig \
+            --name "${{ env.CLUSTER_NAME }}" \
+            --region "${{ env.AWS_REGION }}"
+
+      - name: Smoke test cluster access
+        run: |
+          kubectl get nodes
+          kubectl get ns
+
+      # Optional: ingress-nginx (only if your repo includes it and you need it)
+      - name: Deploy ingress-nginx controller
+        run: |
+          if kubectl -n ingress-nginx get deploy ingress-nginx-controller >/dev/null 2>&1; then
+            echo "✅ ingress-nginx already installed. Skipping."
+          else
+            echo "⚠️ ingress-nginx not found. Deploying..."
+            kubectl apply -f ingress-nginx/deploy.yaml
+          fi
+
+      # Optional but likely needed for secrets manager integration
+      - name: Deploy Secrets Store CSI Driver
+        run: |
+          if kubectl -n kube-system get ds csi-secrets-store-secrets-store-csi-driver >/dev/null 2>&1; then
+            echo "✅ Secrets Store CSI Driver already installed. Skipping."
+          else
+            echo "⚠️ CSI Driver not found. Installing via Helm..."
+            helm repo add secrets-store-csi-driver https://kubernetes-sigs.github.io/secrets-store-csi-driver/charts
+            helm repo update
+
+            helm upgrade --install csi-secrets-store secrets-store-csi-driver/secrets-store-csi-driver \
+              -n kube-system \
+              --set syncSecret.enabled=true
+
+            kubectl -n kube-system rollout status ds/csi-secrets-store-secrets-store-csi-driver --timeout=10m
+          fi
+
+      - name: Deploy AWS provider for Secrets Store CSI
+        run: |
+          if kubectl -n kube-system get ds csi-secrets-store-provider-aws >/dev/null 2>&1; then
+            echo "✅ AWS provider already installed. Skipping."
+          else
+            echo "⚠️ AWS provider not found. Installing..."
+            kubectl apply -f https://raw.githubusercontent.com/aws/secrets-store-csi-driver-provider-aws/main/deployment/aws-provider-installer.yaml
+            kubectl -n kube-system rollout status ds/csi-secrets-store-provider-aws --timeout=10m
+          fi
+
+      - name: Deploy Prometheus
+        run: |
+          helm upgrade --install prometheus ./eks-monitoring/prometheus \
+            --namespace monitoring --create-namespace \
+            --values ./eks-monitoring/prometheus/${{ steps.vars.outputs.stage }}-values.yaml
+
+      # - name: Deploy Grafana
+      #   run: |
+      #     helm upgrade --install grafana ./eks-monitoring/grafana \
+      #       --namespace monitoring --create-namespace \
+      #       --values ./eks-monitoring/grafana/${{ steps.vars.outputs.stage }}-values.yaml

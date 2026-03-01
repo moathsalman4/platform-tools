@@ -1,0 +1,12 @@
+apiVersion: v2                                   # Helm chart API version (v2 = Helm 3 chart format)
+name: prometheus                                 # Name of the Helm chart
+description: Custom Prometheus chart for EKS monitoring  # Human-readable description
+version: 1.0.0                                   # Chart version (bump when templates/values change)
+appVersion: "2.53.0"                             # Prometheus application version (informational; image tag controls runtime)
+
+# SUMMARY:
+# This is the Helm Chart metadata file (Chart.yaml).
+# - apiVersion v2 indicates Helm 3 chart format.
+# - name defines the chart identity.
+# - version is the chart package version (update when chart logic changes).
+# - appVersion documents the Prometheus version expected to run (image tag ultimately decides runtime version).
