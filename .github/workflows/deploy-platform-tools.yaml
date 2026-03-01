@@ -72,13 +72,13 @@ jobs:
           kubectl get ns
 
       # Optional: ingress-nginx (only if your repo includes it and you need it)
-      - name: Deploy ingress-nginx controller
+      - name: Deploy ingress-nginx controller (optional)
         run: |
-          if kubectl -n ingress-nginx get deploy ingress-nginx-controller >/dev/null 2>&1; then
-            echo "✅ ingress-nginx already installed. Skipping."
-          else
-            echo "⚠️ ingress-nginx not found. Deploying..."
+          if [[ -f "ingress-nginx/deploy.yaml" ]]; then
+            echo "📦 Found ingress-nginx/deploy.yaml in repo. Applying..."
             kubectl apply -f ingress-nginx/deploy.yaml
+          else
+            echo "ℹ️ No ingress-nginx/deploy.yaml in this repo. Skipping ingress-nginx install."
           fi
 
       # Optional but likely needed for secrets manager integration
