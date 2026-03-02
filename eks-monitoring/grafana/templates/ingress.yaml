@@ -1,0 +1,29 @@
+apiVersion: networking.k8s.io/v1 # Ingress API (modern stable API)
+kind: Ingress # HTTP routing object (L7) that sends traffic to a Service
+metadata:
+  name: "{{ .Release.Name }}-ingress" # Helm release name + suffix
+  namespace: {{ .Values.namespace }} # monitoring
+  annotations:
+    external-dns.alpha.kubernetes.io/hostname: {{ .Values.grafana.ingress.hostname }} # If external-dns exists, it can auto-create DNS records
+    nginx.ingress.kubernetes.io/whitelist-source-range: {{ .Values.grafana.ingress.whitelistSourceRange }} # Only allow traffic from this CIDR (your public IP /32)
+    nginx.ingress.kubernetes.io/ssl-redirect: "true" # Force HTTPS redirect (ONLY good if TLS is actually configured)
+spec:
+  ingressClassName: nginx # Must match your ingress controller's class (ingress-nginx)
+  rules:
+    - host: {{ .Values.grafana.ingress.hostname }} # Domain name users visit (grafana.team312.com)
+      http:
+        paths:
+          - path: / # Match all paths
+            pathType: Prefix # Any URL starting with / gets routed
+            backend:
+              service:
+                name: "{{ .Release.Name }}-service" # Route to the Grafana Service you created
+                port:
+                  number: 80 # Service port (maps to container 3000)
+
+# summary:
+#   what_this_file_does: "Routes grafana.team312.com traffic through nginx ingress to the Grafana service."
+#   prerequisites:
+#     - "ingress-nginx controller must be installed"
+#     - "DNS must point grafana.team312.com to the ingress controller"
+#     - "If ssl-redirect is true, TLS should be configured (tls block + cert)."

@@ -1,0 +1,10 @@
+apiVersion: v2                # Helm chart API version (v2 = modern Helm 3 chart format)
+name: grafana                 # Chart name (used by Helm + shown in helm list)
+description: Custom Grafana chart for EKS monitoring  # Human description of what this chart is for
+version: 1.0.0                # Chart version (this is YOUR chart version, not Grafana’s)
+appVersion: "11.1.0"          # The Grafana app version this chart installs (used for info/labels)
+
+# This Chart.yaml file registers your Grafana folder as a Helm chart. 
+# It defines the chart’s name and versions so Helm can package/install/upgrade it. 
+# When GitHub Actions runs Helm, Helm reads this file to understand what chart 
+# it’s deploying and to display correct metadata in helm list.
