@@ -6,7 +6,7 @@ metadata:
   annotations:
     external-dns.alpha.kubernetes.io/hostname: {{ .Values.grafana.ingress.hostname }} # If external-dns exists, it can auto-create DNS records
     nginx.ingress.kubernetes.io/whitelist-source-range: {{ .Values.grafana.ingress.whitelistSourceRange }} # Only allow traffic from this CIDR (your public IP /32)
-    nginx.ingress.kubernetes.io/ssl-redirect: "true" # Force HTTPS redirect (ONLY good if TLS is actually configured)
+    nginx.ingress.kubernetes.io/ssl-redirect: "false" # Force HTTPS redirect (ONLY good if TLS is actually configured)
 spec:
   ingressClassName: nginx # Must match your ingress controller's class (ingress-nginx)
   rules:
