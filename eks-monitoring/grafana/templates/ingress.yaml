@@ -25,5 +25,5 @@ spec:
 #   what_this_file_does: "Routes grafana.team312.com traffic through nginx ingress to the Grafana service."
 #   prerequisites:
 #     - "ingress-nginx controller must be installed"
-#     - "DNS must point grafana.team312.com to the ingress controller"
+#     - "DNS must point grafana.grafanamoath.click to the ingress controller"
 #     - "If ssl-redirect is true, TLS should be configured (tls block + cert)."
