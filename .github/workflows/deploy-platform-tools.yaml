@@ -114,8 +114,8 @@ jobs:
             --namespace monitoring --create-namespace \
             --values ./eks-monitoring/prometheus/${{ steps.vars.outputs.stage }}-values.yaml
 
-      # - name: Deploy Grafana
-      #   run: |
-      #     helm upgrade --install grafana ./eks-monitoring/grafana \
-      #       --namespace monitoring --create-namespace \
-      #       --values ./eks-monitoring/grafana/${{ steps.vars.outputs.stage }}-values.yaml
+      - name: Deploy Grafana
+        run: |
+          helm upgrade --install grafana ./eks-monitoring/grafana \
+            --namespace monitoring --create-namespace \
+            --values ./eks-monitoring/grafana/${{ steps.vars.outputs.stage }}-values.yaml
