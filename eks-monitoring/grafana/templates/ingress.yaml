@@ -10,7 +10,7 @@ metadata:
 spec:
   ingressClassName: nginx # Must match your ingress controller's class (ingress-nginx)
   rules:
-    - host: {{ .Values.grafana.ingress.hostname }} # Domain name users visit (grafana.team312.com)
+    - host: {{ .Values.grafana.ingress.hostname }} # Domain name users visit (grafana.grafanamoath.click)
       http:
         paths:
           - path: / # Match all paths
