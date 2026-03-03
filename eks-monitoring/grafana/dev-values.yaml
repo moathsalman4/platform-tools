@@ -22,7 +22,7 @@ grafana:
       memory: 256Mi
 
   ingress:
-    hostname: "grafana.example.com" # placeholder until you pick your real domain
+    hostname: "grafana.grafanamoath.click" # Domain name for Grafana access (must point to ingress controller)
     whitelistSourceRange: "108.71.132.112/32"
 
 # MINI SUMMARY
