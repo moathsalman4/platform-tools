@@ -1,0 +1,28 @@
+namespace: monitoring
+
+grafana:
+  image:
+    repository: grafana/grafana
+    tag: "11.1.0"
+
+  # placeholders so Helm renders (replace later after Terraform)
+  secretsManagerSecretName: "PLACEHOLDER-WILL-REPLACE"
+  datasourceUrl: "http://prometheus-server.monitoring:9090"
+  irsaRoleArn: "" # empty on purpose until Terraform creates the role
+
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      memory: 256Mi
+
+  ingress:
+    hostname: "grafana.example.com" # placeholder until you pick your real domain
+    whitelistSourceRange: "108.71.132.112/32"
+
+# MINI SUMMARY
+# This values file installs Grafana into the "monitoring" namespace.
+# Grafana runs version 11.1.0, connects to Prometheus using the in-cluster Service URL,
+# and pulls admin credentials from AWS Secrets Manager using IRSA + the Secrets Store CSI driver.
+# Grafana is exposed via Ingress at grafana.team312.com, and access is locked down to your /32 IP.

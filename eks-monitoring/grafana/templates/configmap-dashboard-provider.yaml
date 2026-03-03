@@ -1,0 +1,22 @@
+apiVersion: v1 # Core Kubernetes API
+kind: ConfigMap # Simple key/value config object (like a tiny file bundle)
+metadata:
+  name: "{{ .Release.Name }}-dashboard-provider" # This name MUST match the Deployment volume reference
+  namespace: {{ .Values.namespace }} # Install into the monitoring namespace
+data:
+  dashboards.yaml: | # This creates a file named dashboards.yaml inside the ConfigMap
+    apiVersion: 1 # Grafana provisioning file format version
+    providers:
+      - name: default # Provider name inside Grafana
+        orgId: 1 # Default Grafana org
+        folder: "" # No folder grouping (root)
+        type: file # We are loading dashboards from files on disk
+        disableDeletion: false # Allow Grafana UI to delete dashboards (fine for dev)
+        editable: true # Allow editing dashboards in UI
+        options:
+          path: /var/lib/grafana/dashboards # MUST match where we mount dashboards in the pod
+          foldersFromFilesStructure: false # Don’t auto-create folders from file structure
+
+# 2) configmap-dashboard-provider.yaml:
+#    - Tells Grafana to load dashboards from the filesystem path:
+#      /var/lib/grafana/dashboards

@@ -1,0 +1,31 @@
+apiVersion: v1 # Core Kubernetes API
+kind: ConfigMap # Stores dashboard JSON files that Grafana will auto-import
+metadata:
+  name: "{{ .Release.Name }}-dashboards" # MUST match the Deployment volume reference
+  namespace: {{ .Values.namespace }} # Same namespace as Grafana
+data:
+  example-dashboard.json: | # This creates a file inside the pod at /var/lib/grafana/dashboards/example-dashboard.json
+    {
+      "annotations": { "list": [] },
+      "editable": true,
+      "gnetId": null,
+      "graphTooltip": 0,
+      "id": null,
+      "iteration": 1,
+      "panels": [],
+      "schemaVersion": 38,
+      "style": "dark",
+      "tags": ["example"],
+      "templating": { "list": [] },
+      "time": { "from": "now-6h", "to": "now" },
+      "timepicker": {},
+      "timezone": "",
+      "title": "Example Dashboard (placeholder)",
+      "uid": "example-placeholder",
+      "version": 1
+    }
+
+
+# 3) configmap-dashboards.yaml:
+#    - Provides dashboard JSON files that get mounted into that path.
+#    - Grafana reads them on startup and auto-imports dashboards.
