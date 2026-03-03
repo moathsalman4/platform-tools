@@ -5,10 +5,14 @@ grafana:
     repository: grafana/grafana
     tag: "11.1.0"
 
-  # placeholders so Helm renders (replace later after Terraform)
-  secretsManagerSecretName: "PLACEHOLDER-WILL-REPLACE"
+  # AWS Secrets Manager secret name created by Terraform (Grafana admin creds)
+  secretsManagerSecretName: "projectx_cluster_ubuntu25b-grafana-admin-creds"
+  
+  # Prometheus service URL inside the cluster (already running in monitoring namespace)
   datasourceUrl: "http://prometheus-server.monitoring:9090"
-  irsaRoleArn: "" # empty on purpose until Terraform creates the role
+  
+  # IRSA role ARN created by Terraform (pod assumes this to read Secrets Manager)
+  irsaRoleArn: "arn:aws:iam::665832051028:role/projectx_cluster_ubuntu25b-grafana-role" 
 
   resources:
     requests:
@@ -25,4 +29,4 @@ grafana:
 # This values file installs Grafana into the "monitoring" namespace.
 # Grafana runs version 11.1.0, connects to Prometheus using the in-cluster Service URL,
 # and pulls admin credentials from AWS Secrets Manager using IRSA + the Secrets Store CSI driver.
-# Grafana is exposed via Ingress at grafana.team312.com, and access is locked down to your /32 IP.
+# Grafana is exposed via Ingress at grafana.example.com and access is locked down to your /32 IP.
