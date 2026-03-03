@@ -1,0 +1,17 @@
+apiVersion: v1 # Core API
+kind: Service # Stable network endpoint for pods
+metadata:
+  name: "{{ .Release.Name }}-service" # Internal service name
+  namespace: {{ .Values.namespace }} # monitoring
+spec:
+  type: ClusterIP # Internal-only service (not public)
+  selector:
+    app: {{ .Release.Name }} # Matches Deployment pod label
+  ports:
+    - name: http # Named port
+      port: 80 # Service port inside cluster
+      targetPort: http # Forwards to container port named "http" (3000)
+
+# summary:
+#   what_this_file_does: "Exposes Grafana inside the cluster as a ClusterIP service."
+#   key_point: "Ingress (later) will route traffic to this service if you want external access."

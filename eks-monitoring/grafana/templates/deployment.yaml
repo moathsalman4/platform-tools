@@ -1,0 +1,91 @@
+apiVersion: apps/v1 # Use the Apps API group for Deployments
+kind: Deployment # Runs and manages a set of identical pods
+metadata:
+  name: "{{ .Release.Name }}-deployment" # Helm release name + suffix (ex: grafana-deployment)
+  namespace: {{ .Values.namespace }} # Deploy into the namespace from values.yaml (monitoring)
+spec:
+  replicas: 1 # One Grafana pod (fine for dev)
+  selector: # How the Deployment finds its pods
+    matchLabels:
+      app: {{ .Release.Name }} # Pod label that must match template.labels below
+  template: # The pod template (what gets created)
+    metadata:
+      labels:
+        app: {{ .Release.Name }} # Labels applied to the pod
+    spec:
+      serviceAccountName: "{{ .Release.Name }}-sa" # IMPORTANT: pod uses IRSA via this ServiceAccount
+      securityContext: # Run Grafana as its expected non-root user/group
+        fsGroup: 472
+        runAsUser: 472
+        runAsGroup: 472
+      containers:
+        - name: grafana # Container name inside pod
+          image: "{{ .Values.grafana.image.repository }}:{{ .Values.grafana.image.tag }}" # Image from values.yaml
+          ports:
+            - name: http # Named port (used by Service targetPort and probes)
+              containerPort: 3000 # Grafana listens on 3000 in the container
+
+          env: # Set Grafana admin username/password from a Kubernetes Secret
+            - name: GF_SECURITY_ADMIN_USER # Grafana env var for admin username
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Release.Name }}-credentials" # Secret created by SecretProviderClass (below)
+                  key: admin-user # Key inside the secret
+            - name: GF_SECURITY_ADMIN_PASSWORD # Grafana env var for admin password
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Release.Name }}-credentials" # Same secret
+                  key: admin-password # Key inside the secret
+
+          livenessProbe: # Restart container if Grafana becomes unhealthy
+            httpGet:
+              path: /api/health
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          readinessProbe: # Only route traffic to pod once Grafana is ready
+            httpGet:
+              path: /api/health
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+
+          resources: # CPU/memory sizing from values.yaml
+            requests:
+              cpu: {{ .Values.grafana.resources.requests.cpu }}
+              memory: {{ .Values.grafana.resources.requests.memory }}
+            limits:
+              memory: {{ .Values.grafana.resources.limits.memory }}
+
+          volumeMounts: # Mount config/dashboards/secrets into the container filesystem
+            - name: datasource
+              mountPath: /etc/grafana/provisioning/datasources # Grafana datasource provisioning path
+            - name: dashboard-provider
+              mountPath: /etc/grafana/provisioning/dashboards # Dashboard provider config path
+            - name: dashboards
+              mountPath: /var/lib/grafana/dashboards # Actual dashboards JSON files
+            - name: secrets-store
+              mountPath: /mnt/secrets-store # CSI will mount secret files here (optional but useful)
+              readOnly: true
+
+      volumes: # Define the volumes that match the mounts above
+        - name: datasource
+          configMap:
+            name: "{{ .Release.Name }}-datasource" # ConfigMap must exist (your chart should create it)
+        - name: dashboard-provider
+          configMap:
+            name: "{{ .Release.Name }}-dashboard-provider" # ConfigMap must exist
+        - name: dashboards
+          configMap:
+            name: "{{ .Release.Name }}-dashboards" # ConfigMap must exist
+        - name: secrets-store
+          csi:
+            driver: secrets-store.csi.k8s.io # Secrets Store CSI driver
+            readOnly: true
+            volumeAttributes:
+              secretProviderClass: "{{ .Release.Name }}-admin-creds" # Tells CSI which SecretProviderClass to use
+
+
+# summary:
+#   what_this_file_does: "Runs Grafana as a Deployment and injects admin creds using a Kubernetes Secret created by Secrets Store CSI."
+#   key_point: "The pod uses IRSA (ServiceAccount IAM role) to read AWS Secrets Manager, so no passwords are stored in GitHub."
