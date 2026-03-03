@@ -23,7 +23,7 @@ grafana:
 
   ingress:
     hostname: "grafana.grafanamoath.click" # Domain name for Grafana access (must point to ingress controller)
-    whitelistSourceRange: "50.149.2.154/32" # Only allow traffic from this IP (your public IP /32)
+    whitelistSourceRange: "0.0.0.0/0" # Only allow traffic from this IP (your public IP /32)
 
 # MINI SUMMARY
 # This values file installs Grafana into the "monitoring" namespace.
