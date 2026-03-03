@@ -72,14 +72,22 @@ jobs:
           kubectl get ns
 
       # Optional: ingress-nginx (only if your repo includes it and you need it)
-      - name: Deploy ingress-nginx controller (optional)
+      - name: Deploy ingress-nginx controller
         run: |
-          if [[ -f "ingress-nginx/deploy.yaml" ]]; then
-            echo "📦 Found ingress-nginx/deploy.yaml in repo. Applying..."
-            kubectl apply -f ingress-nginx/deploy.yaml
+          if kubectl get ns ingress-nginx >/dev/null 2>&1; then
+            echo "Ingress namespace exists"
           else
-            echo "ℹ️ No ingress-nginx/deploy.yaml in this repo. Skipping ingress-nginx install."
+            kubectl create namespace ingress-nginx
           fi
+
+          helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
+          helm repo update
+
+          helm upgrade --install ingress-nginx ingress-nginx/ingress-nginx \
+            --namespace ingress-nginx \
+            --set controller.service.type=LoadBalancer
+
+          kubectl -n ingress-nginx rollout status deployment/ingress-nginx-controller --timeout=10m
 
       # Optional but likely needed for secrets manager integration
       - name: Deploy Secrets Store CSI Driver
