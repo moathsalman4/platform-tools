@@ -6,9 +6,14 @@ metadata:
   annotations:
     external-dns.alpha.kubernetes.io/hostname: {{ .Values.grafana.ingress.hostname }} # If external-dns exists, it can auto-create DNS records
     nginx.ingress.kubernetes.io/whitelist-source-range: {{ .Values.grafana.ingress.whitelistSourceRange }} # Only allow traffic from this CIDR (your public IP /32)
-    nginx.ingress.kubernetes.io/ssl-redirect: "false" # Force HTTPS redirect (ONLY good if TLS is actually configured)
+    nginx.ingress.kubernetes.io/ssl-redirect: "true" # Force HTTPS redirect (ONLY good if TLS is actually configured)
+    cert-manager.io/cluster-issuer: letsencrypt-prod # If using cert-manager for TLS, specify the ClusterIssuer to use for certs (must be pre-created)
 spec:
   ingressClassName: nginx # Must match your ingress controller's class (ingress-nginx)
+  tls:
+    - hosts:
+        - grafana.grafanamoath.click
+      secretName: grafana-tls # TLS secret for HTTPS (must be pre-created or managed by cert-manager)
   rules:
     - host: {{ .Values.grafana.ingress.hostname }} # Domain name users visit (grafana.grafanamoath.click)
       http:
