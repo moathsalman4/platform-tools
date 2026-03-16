@@ -25,4 +25,3 @@ spec:
     settings:
       clusterName: projectx_cluster_ubuntu25b
       clusterEndpoint: https://FDA5375AA8B3D590F0DF1CECDC23C240.gr7.us-east-1.eks.amazonaws.com
-      interruptionQueue: projectx_cluster_ubuntu25b
