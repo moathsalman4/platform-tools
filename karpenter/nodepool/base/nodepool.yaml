@@ -45,7 +45,7 @@ spec:
         Type: public
   securityGroupSelectorTerms:
     - tags:
-        name: projectx_cluster_ubuntu25b-node-sg
+        Name: projectx_cluster_ubuntu25b-node-sg
   tags:
     Name: karpenter-node
     environment: dev
