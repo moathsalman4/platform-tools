@@ -39,13 +39,13 @@ metadata:
 spec:
   amiSelectorTerms:
     - alias: al2023@latest
-  role: eks_worker_nodes_role    
+  role: projectx_cluster_ubuntu25b-workers-iam-role     
   subnetSelectorTerms:
     - tags:
         Type: public
   securityGroupSelectorTerms:
     - tags:
-        name: worker-nodes-sg
+        name: projectx_cluster_ubuntu25b-node-sg
   tags:
     Name: karpenter-node
     environment: dev
