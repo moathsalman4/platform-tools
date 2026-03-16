@@ -5,3 +5,4 @@ resources:
   - flux-system/
   - efk-logging/overlays/dev
   - karpenter/overlays/dev
+  - karpenter/nodepool/overlays/dev
