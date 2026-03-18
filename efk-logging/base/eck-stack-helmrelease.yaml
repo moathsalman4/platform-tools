@@ -1,0 +1,38 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: eck-stack
+  namespace: logging
+spec:
+  interval: 10m
+  releaseName: eck-stack
+  targetNamespace: logging
+  dependsOn:
+    - name: eck-operator
+      namespace: logging
+  chart:
+    spec:
+      chart: eck-stack
+      version: 0.18.1
+      sourceRef:
+        kind: HelmRepository
+        name: elastic
+        namespace: flux-system
+  values:
+    eck-elasticsearch:
+      enabled: true
+      fullnameOverride: elasticsearch
+      version: 9.1.4
+      nodeSets:
+        - name: default
+          count: 1
+          config:
+            node.store.allow_mmap: false
+
+    eck-kibana:
+      enabled: true
+      fullnameOverride: kibana
+      version: 9.1.4
+      count: 1
+      elasticsearchRef:
+        name: elasticsearch
