@@ -30,3 +30,5 @@ spec:
             Suppress_Type_Name On
             tls               On
             tls.verify        Off
+            HTTP_User         elastic
+            HTTP_Passwd       cfgn71n1efLXb857s761PaL8
