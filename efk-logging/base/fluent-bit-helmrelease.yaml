@@ -28,4 +28,5 @@ spec:
             Port              9200
             Index             kubernetes-logs
             Suppress_Type_Name On
-            tls               Off
+            tls               On
+            tls.verify        Off
