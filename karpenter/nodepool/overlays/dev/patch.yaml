@@ -20,6 +20,7 @@ spec:
             - t3a.medium
             - t3.large
             - t3a.large
+            - m5.large
   limits:
     cpu: 20
     memory: 80Gi
