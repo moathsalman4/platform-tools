@@ -6,3 +6,4 @@ resources:
   - efk-logging/overlays/dev
   - karpenter/overlays/dev
   - karpenter/nodepool/overlays/dev
+  - sealed-secrets/overlays/dev

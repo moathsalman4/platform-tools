@@ -1,0 +1,44 @@
+# Default-deny all ingress/egress to the controller pod,
+# then allow only what it strictly needs.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: sealed-secrets-controller
+  namespace: sealed-secrets
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: sealed-secrets
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    # Allow Flux controllers to call the controller's webhook port (8080)
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: flux-system
+      ports:
+        - protocol: TCP
+          port: 8080
+    # Allow Prometheus scraping (if using ServiceMonitor)
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: monitoring
+      ports:
+        - protocol: TCP
+          port: 8081
+  egress:
+    # Allow DNS resolution only
+    - ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+    # Allow writing decrypted Secrets back to kube-apiserver
+    - ports:
+        - protocol: TCP
+          port: 443
+        - protocol: TCP
+          port: 6443

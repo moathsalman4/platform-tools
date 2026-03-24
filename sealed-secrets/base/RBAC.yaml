@@ -1,0 +1,30 @@
+# Restrict who can read/update SealedSecrets CRs in the cluster.
+# The controller's own RBAC is created by the Helm chart.
+# This adds an ops-team ClusterRole for read-only inspection.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: sealed-secrets-reader
+  labels:
+    app.kubernetes.io/managed-by: flux
+rules:
+  - apiGroups: ["bitnami.com"]
+    resources: ["sealedsecrets"]
+    verbs: ["get", "list", "watch"]
+  # Do NOT grant "secrets" verbs here — the controller is the only
+  # actor that should be able to read the decrypted Secret objects.
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: sealed-secrets-reader-binding
+  labels:
+    app.kubernetes.io/managed-by: flux
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: sealed-secrets-reader
+subjects:
+  - kind: Group
+    name: platform-ops         # map to your SSO group
+    apiGroup: rbac.authorization.k8s.io

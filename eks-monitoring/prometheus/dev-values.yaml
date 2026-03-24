@@ -20,9 +20,9 @@ server:
   resources:
     requests:                   # Minimum resources Kubernetes reserves so the pod can be scheduled reliably.
       cpu: 100m                 # 0.1 CPU reserved.
-      memory: 256Mi             # 256Mi RAM reserved.
+      memory: 512Mi             # 256Mi RAM reserved.
     limits:                     # Hard ceiling (K8s will OOMKill if memory exceeds this).
-      memory: 512Mi             # Prometheus cannot use more than 512Mi RAM.
+      memory: 1Gi             # Prometheus cannot use more than 512Mi RAM.
 
 nodeExporter:
   # Node Exporter runs as a DaemonSet (one pod per node) to expose node-level metrics (CPU, disk, mem, etc.)

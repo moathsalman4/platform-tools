@@ -1,0 +1,200 @@
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: sealed-secrets
+  namespace: sealed-secrets
+spec:
+  interval: 1h
+  timeout: 5m
+
+  chart:
+    spec:
+      chart: sealed-secrets
+      version: ">=2.16.0 <3.0.0"
+      sourceRef:
+        kind: HelmRepository
+        name: sealed-secrets
+        namespace: flux-system
+      interval: 24h
+
+  install:
+    crds: Create
+    remediation:
+      retries: 3
+
+  upgrade:
+    crds: CreateReplace
+    cleanupOnFail: true
+    remediation:
+      retries: 3
+      strategy: rollback
+
+  rollback:
+    cleanupOnFail: true
+    recreate: false
+    timeout: 5m
+
+  # ── Values ─────────────────────────────────────────────────────────────────
+  values:
+
+    # Image — pin digest in prod for supply-chain integrity
+    image:
+      registry: docker.io
+      repository: bitnami/sealed-secrets-controller
+      # tag: "" # leave empty to let chart version drive it; pin for strict envs
+      pullPolicy: IfNotPresent
+
+    # Full image name override (useful if you mirror to an internal registry)
+    # fullnameOverride: sealed-secrets-controller
+
+    # ── Controller configuration ──────────────────────────────────────────
+    # Where the controller serves its metrics and API endpoints
+    # (kubeseal defaults to port 8080 for the cert-fetch endpoint)
+    controller:
+      port: 8080
+
+    # Key rotation — rotate the sealing keypair every 30 days; keep 30 days worth
+    # of old keys so previously sealed secrets remain decryptable during rotation window.
+    keyrenewperiod: "720h"    # 30d  — default is "720h", set explicitly for clarity
+    keyttl: "8760h"           # 1y   — how long old keys are retained; tune to your rotation cadence
+
+    # Metrics (Prometheus) — expose on a separate port so it can be scraped
+    # without touching the controller API port
+    metrics:
+      port: 8081
+      serviceMonitor:
+        enabled: true
+        namespace: monitoring          # namespace where your Prometheus lives
+        interval: 30s
+        scrapeTimeout: 10s
+        labels:
+          release: kube-prometheus-stack   # match your Prometheus serviceMonitorSelector
+
+    # ── Resources ─────────────────────────────────────────────────────────
+    # These are conservative starting values; tune based on observed usage.
+    # The controller is not CPU-hungry; crypto ops are fast.
+    resources:
+      requests:
+        cpu: 50m
+        memory: 64Mi
+      limits:
+        cpu: 200m
+        memory: 128Mi
+
+    # ── High availability ─────────────────────────────────────────────────
+    # Sealed Secrets controller is stateless except for the keypair stored
+    # in a Secret; a single active replica is fine, but ≥2 removes the SPOF.
+    replicaCount: 2
+
+    podDisruptionBudget:
+      enabled: true
+      minAvailable: 1
+
+    # Spread across nodes / AZs; prefer separate zones if the cluster spans them
+    affinity:
+      podAntiAffinity:
+        preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchLabels:
+                  app.kubernetes.io/name: sealed-secrets
+              topologyKey: kubernetes.io/hostname
+          - weight: 50
+            podAffinityTerm:
+              labelSelector:
+                matchLabels:
+                  app.kubernetes.io/name: sealed-secrets
+              topologyKey: topology.kubernetes.io/zone
+
+    # ── Security ──────────────────────────────────────────────────────────
+    # Pod-level security context — run as non-root, drop ALL capabilities
+    podSecurityContext:
+      runAsNonRoot: true
+      runAsUser: 1001
+      runAsGroup: 1001
+      fsGroup: 1001
+      seccompProfile:
+        type: RuntimeDefault
+
+    # Container-level security context
+    containerSecurityContext:
+      allowPrivilegeEscalation: false
+      readOnlyRootFilesystem: true
+      capabilities:
+        drop:
+          - ALL
+
+    # ── Network policy ─────────────────────────────────────────────────
+    # Allow: ingress from kube-apiserver (webhook), ingress from Prometheus,
+    #        egress to kube-apiserver only.
+    networkPolicy:
+      enabled: true
+
+    # ── Service ────────────────────────────────────────────────────────
+    service:
+      type: ClusterIP
+      port: 8080
+      # Annotate with cloud LB annotations here if you expose externally
+      annotations: {}
+
+    # ── RBAC ───────────────────────────────────────────────────────────
+    rbac:
+      create: true        # creates ClusterRole + ClusterRoleBinding
+      # pspEnabled: false # PSP is removed in k8s 1.25+; leave false
+
+    serviceAccount:
+      create: true
+      # name: ""          # defaults to release name
+      annotations: {}
+      # IRSA / Workload Identity annotation if you back the keypair with KMS:
+      # annotations:
+      #   eks.amazonaws.com/role-arn: arn:aws:iam::123456789012:role/sealed-secrets-kms
+
+    # ── Logging ────────────────────────────────────────────────────────
+    # Available log levels: debug, info (default), warning, error
+    logLevel: info
+    logFormat: json   # structured logs — crucial for log aggregation pipelines
+
+    # ── Additional namespace scope ──────────────────────────────────────
+    # By default the controller watches all namespaces (cluster-scoped).
+    # If you want to scope it to specific namespaces only, list them here.
+    # Useful in multi-tenant clusters where teams run their own controllers.
+    # additionalNamespaces: []
+
+    # ── Priority class ─────────────────────────────────────────────────
+    # Give the controller a slight scheduling boost — it needs to be
+    # available before workloads that consume its sealed secrets.
+    priorityClassName: system-cluster-critical
+
+    # ── Tolerations ────────────────────────────────────────────────────
+    # Uncomment if your control-plane nodes are tainted and you want to
+    # co-locate the controller there for blast-radius isolation.
+    # tolerations:
+    #   - key: node-role.kubernetes.io/control-plane
+    #     operator: Exists
+    #     effect: NoSchedule
+
+    # ── Node selector / topology ────────────────────────────────────────
+    nodeSelector: {}
+
+    # ── Update strategy ──────────────────────────────────────────���─────
+    updateStrategy:
+      type: RollingUpdate
+      rollingUpdate:
+        maxSurge: 1
+        maxUnavailable: 0
+
+    # ── Liveness / readiness ────────────────────────────────────────────
+    # The chart sets sensible /healthz probes by default — no override needed.
+
+    # ── Ingress ────────────────────────────────────────────────────────
+    # Typically not exposed; kubeseal fetches the cert in-cluster.
+    ingress:
+      enabled: false
+
+    # ── Extra manifests ─────────────────────────────────────────────────
+    # Uncomment to inject raw manifests alongside the chart (e.g. a
+    # NetworkPolicy that the chart doesn't generate natively).
+    # extraDeploy: []

@@ -42,7 +42,7 @@ spec:
   role: projectx_cluster_ubuntu25b-workers-iam-role     
   subnetSelectorTerms:
     - tags:
-        Type: public
+        environment: dev
   securityGroupSelectorTerms:
     - tags:
         Name: projectx_cluster_ubuntu25b-node-sg

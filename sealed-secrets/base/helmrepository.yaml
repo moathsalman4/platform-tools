@@ -1,0 +1,10 @@
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: HelmRepository
+metadata:
+  name: sealed-secrets
+  namespace: flux-system
+spec:
+  interval: 24h
+  url: https://bitnami-labs.github.io/sealed-secrets
+  # Pin to a digest once you've verified the chart
+  # digest: sha256:<chart-index-digest>
