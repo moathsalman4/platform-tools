@@ -13,7 +13,7 @@ spec:
   chart:
     spec:
       chart: fluent-bit
-      version: 0.56.0
+      version: 0.47.10
       sourceRef:
         kind: HelmRepository
         name: fluent
@@ -63,7 +63,6 @@ spec:
             tls.verify        Off
             HTTP_User         elastic
             HTTP_Passwd       ${ES_PASSWORD}
+            Buffer_Size       256KB
             Retry_Limit       5
             Workers           1
-            Compress          gzip
-            net.keepalive     off
