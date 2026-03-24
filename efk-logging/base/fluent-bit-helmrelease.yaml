@@ -38,5 +38,5 @@ spec:
             tls.verify        Off
             HTTP_User         elastic
             HTTP_Passwd       ${ES_PASSWORD}
-            Buffer_Size       256k
+            Buffer_Size       False
             Retry_Limit       5
