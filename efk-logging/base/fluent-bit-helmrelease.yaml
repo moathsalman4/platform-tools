@@ -28,7 +28,7 @@ spec:
     config:
       outputs: |
         [OUTPUT]
-            Name              es
+            Name              opensearch
             Match             *
             Host              elasticsearch-es-http.logging.svc.cluster.local
             Port              9200
@@ -38,5 +38,5 @@ spec:
             tls.verify        Off
             HTTP_User         elastic
             HTTP_Passwd       ${ES_PASSWORD}
-            Buffer_Size       False
+            Buffer_Size       256KB
             Retry_Limit       5
