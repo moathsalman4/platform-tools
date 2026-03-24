@@ -6,3 +6,4 @@ resources:
   - eck-operator-helmrelease.yaml
   - eck-stack-helmrelease.yaml
   - fluent-bit-helmrelease.yaml
+  - basic-auth-sealed.yaml
