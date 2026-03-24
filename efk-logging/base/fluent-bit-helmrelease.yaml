@@ -65,3 +65,5 @@ spec:
             HTTP_Passwd       ${ES_PASSWORD}
             Retry_Limit       5
             Workers           1
+            Compress          gzip
+            net.keepalive     off
