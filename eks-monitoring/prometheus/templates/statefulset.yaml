@@ -33,6 +33,8 @@ spec:
             - "--storage.tsdb.path=/prometheus"                              # Store metrics DB here (PVC)
             - "--storage.tsdb.retention.time={{ .Values.server.retention }}" # How long to keep metrics
             - "--web.enable-lifecycle"                                       # Allows POST /-/reload (reload config)
+            - "--storage.tsdb.min-block-duration=2h"                           # Fixed 2h blocks for Thanos sidecar upload
+            - "--storage.tsdb.max-block-duration=2h"                           # Prevent compaction — Thanos handles it
 
           ports:
             - name: http                               # Named port so Services/probes can reference "http"
@@ -65,10 +67,31 @@ spec:
             - name: storage                            # Mount the persistent volume for TSDB data
               mountPath: /prometheus
 
+        - name: thanos-sidecar                           # Thanos sidecar — ships Prometheus data to S3
+          image: quay.io/thanos/thanos:v0.36.1
+          args:
+            - sidecar
+            - --tsdb.path=/prometheus                    # Same path as Prometheus TSDB (shared volume)
+            - --prometheus.url=http://localhost:9090      # Talks to Prometheus via localhost (same pod)
+            - --objstore.config-file=/etc/thanos/objstore.yml  # S3 bucket config from Secret
+          ports:
+            - name: grpc                                 # gRPC port — Thanos Querier connects here
+              containerPort: 10901
+            - name: http-sidecar                         # HTTP port — health/metrics
+              containerPort: 10902
+          volumeMounts:
+            - name: storage                              # Shares Prometheus TSDB volume (reads completed blocks)
+              mountPath: /prometheus
+            - name: thanos-objstore                      # Mounts the S3 config secret
+              mountPath: /etc/thanos
+
       volumes:
         - name: config                                 # Volume definition for config
           configMap:
             name: "{{ .Release.Name }}-server-config"    # Must match the ConfigMap name that contains prometheus.yml
+        - name: thanos-objstore                          # Volume for Thanos S3 config (from SealedSecret)
+          secret:
+            secretName: thanos-objstore-secret            # Decrypted by sealed-secrets controller
 
   volumeClaimTemplates:                                # Automatically creates a PVC per pod for persistent storage
     - metadata:

@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: thanos-sidecar
+  namespace: {{ .Values.namespace }}
+  labels:
+    app: thanos-sidecar
+spec:
+  type: ClusterIP
+  clusterIP: None                                      # Headless — returns pod IPs directly (no virtual IP)
+  ports:
+    - name: grpc                                       # gRPC port — Thanos Querier connects here
+      port: 10901
+      targetPort: grpc
+  selector:
+    app: "{{ .Release.Name }}-server"                    # Matches Prometheus pod labels — finds the sidecar container

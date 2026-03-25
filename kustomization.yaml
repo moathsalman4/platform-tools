@@ -7,3 +7,4 @@ resources:
   - karpenter/overlays/dev
   - karpenter/nodepool/overlays/dev
   - sealed-secrets/overlays/dev
+  - thanos/overlays/dev

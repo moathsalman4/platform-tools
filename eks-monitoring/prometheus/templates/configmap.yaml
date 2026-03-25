@@ -10,9 +10,12 @@ metadata:
   namespace: {{ .Values.namespace }} # Put the ConfigMap in the same namespace as the Prometheus StatefulSet
 data: # The data section contains the actual configuration file for Prometheus
   prometheus.yml: | # So this ConfigMap creates a “file” named prometheus.yml inside the ConfigMap. The content of this file is the Prometheus configuration.
-    global: 
+    global:
       scrape_interval: {{ .Values.scrapeInterval }}
       evaluation_interval: {{ .Values.evaluationInterval }}
+      external_labels:
+        cluster: projectx-dev
+        replica: prometheus-0
 
     scrape_configs:
       # API Server
