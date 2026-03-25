@@ -9,7 +9,7 @@ grafana:
   secretsManagerSecretName: "projectx_cluster_ubuntu25b-grafana-admin-creds"
   
   # Prometheus service URL inside the cluster (already running in monitoring namespace)
-  datasourceUrl: "http://prometheus-server.monitoring:9090"
+  datasourceUrl: "http://thanos-query.monitoring:9090"
   
   # IRSA role ARN created by Terraform (pod assumes this to read Secrets Manager)
   irsaRoleArn: "arn:aws:iam::665832051028:role/projectx_cluster_ubuntu25b-grafana-role" 
