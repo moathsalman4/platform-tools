@@ -1,0 +1,67 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: thanos-storegateway
+  namespace: monitoring
+  labels:
+    app: thanos-storegateway
+spec:
+  serviceName: thanos-storegateway
+  replicas: 1
+  selector:
+    matchLabels:
+      app: thanos-storegateway
+  template:
+    metadata:
+      labels:
+        app: thanos-storegateway
+    spec:
+      serviceAccountName: thanos-sa
+      containers:
+        - name: storegateway
+          image: quay.io/thanos/thanos:v0.36.1
+          args:
+            - store
+            - --objstore.config-file=/etc/thanos/objstore.yml
+            - --data-dir=/data
+          ports:
+            - name: grpc
+              containerPort: 10901
+            - name: http
+              containerPort: 10902
+          livenessProbe:
+            httpGet:
+              path: /-/healthy
+              port: http
+            initialDelaySeconds: 15
+            periodSeconds: 15
+          readinessProbe:
+            httpGet:
+              path: /-/ready
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          volumeMounts:
+            - name: thanos-objstore
+              mountPath: /etc/thanos
+            - name: data
+              mountPath: /data
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              memory: 512Mi
+      volumes:
+        - name: thanos-objstore
+          secret:
+            secretName: thanos-objstore-secret
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        storageClassName: gp2
+        resources:
+          requests:
+            storage: 5Gi
