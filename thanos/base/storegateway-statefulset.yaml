@@ -17,6 +17,10 @@ spec:
         app: thanos-storegateway
     spec:
       serviceAccountName: thanos-sa
+      securityContext:
+        fsGroup: 1001
+        runAsUser: 1001
+        runAsNonRoot: true
       containers:
         - name: storegateway
           image: quay.io/thanos/thanos:v0.36.1
