@@ -15,6 +15,11 @@ spec:
         name: bitnami
         namespace: flux-system
   values:
+    image:
+      registry: quay.io
+      repository: thanos/thanos
+      tag: v0.36.1
+
     existingObjstoreSecret: thanos-objstore-secret
 
     serviceAccount:
