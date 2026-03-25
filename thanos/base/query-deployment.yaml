@@ -21,6 +21,7 @@ spec:
           image: quay.io/thanos/thanos:v0.36.1
           args:
             - query
+            - --http-address=0.0.0.0:9090
             - --store=thanos-sidecar.monitoring.svc.cluster.local:10901
             - --store=thanos-storegateway.monitoring.svc.cluster.local:10901
           ports:
