@@ -1,0 +1,62 @@
+{
+    "categories": [
+      {
+        "name": "Cloud Platforms & Infra",
+        "skills": ["AWS", "EKS", "IAM", "ALB/NLB", "Azure", "AKS", "Azure AD", "ACR"]
+      },
+      {
+        "name": "Containers & Orchestration",
+        "skills": ["Kubernetes", "Helm", "Docker", "Karpenter", "NGINX Ingress", "HPA", "Rancher", "Istio"]
+      },
+      {
+        "name": "Infrastructure as Code",
+        "skills": ["Terraform"]
+      },
+      {
+        "name": "CI/CD & GitOps",
+        "skills": ["GitHub Actions", "GitLab CI", "ArgoCD", "FluxCD"]
+      },
+      {
+        "name": "Monitoring & Observability",
+        "skills": ["Prometheus", "Grafana", "Thanos", "Elasticsearch", "Fluentd", "Kibana", "CloudWatch"]
+      },
+      {
+        "name": "Security & Secrets Management",
+        "skills": ["Sealed Secrets", "AWS Secrets Manager", "IRSA", "cert-manager"]
+      },
+      {
+        "name": "Databases",
+        "skills": ["MongoDB", "DynamoDB", "MySQL"]
+      },
+      {
+        "name": "Scripting & Automation",
+        "skills": ["Linux", "Bash", "Python"]
+      },
+      {
+        "name": "Platform & Operations",
+        "skills": ["SLA/SLO", "Incident Response", "API Systems", "Jira", "Confluence"]
+      },
+      {
+        "name": "AI & Developer Acceleration",
+        "skills": ["GitHub Copilot", "Claude", "Claude Code", "ChatGPT", "Cursor", "LLMs", "Prompt Engineering", "AI-Assisted Development"]
+      }
+    ],
+    "certifications": [
+      {
+        "name": "AWS Solutions Architect Associate (SAA)",
+        "issuer": "Amazon Web Services"
+      },
+      {
+        "name": "Certified Kubernetes Administrator (CKA)",
+        "issuer": "CNCF"
+      },
+      {
+        "name": "Certified Kubernetes Application Developer (CKAD)",
+        "issuer": "CNCF"
+      },
+      {
+        "name": "HashiCorp Terraform Associate",
+        "issuer": "HashiCorp"
+      }
+    ]
+  }

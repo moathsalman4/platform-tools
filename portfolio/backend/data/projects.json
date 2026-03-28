@@ -1,0 +1,128 @@
+[
+    {
+      "id": 1,
+      "title": "DevOps Portfolio Platform",
+      "description": "Two-tier portfolio website deployed via GitOps to showcase skills, projects, and experience. Built end-to-end from application code to production deployment on EKS using a full platform engineering stack.",
+      "techStack": ["React", "Node.js", "Docker", "Helm", "GitHub Actions", "FluxCD", "Istio", "cert-manager", "AWS EKS", "Terraform", "Python"],
+      "highlights": [
+        "Full GitOps deployment pipeline with FluxCD pulling Helm charts from ECR",
+        "Istio service mesh for traffic routing instead of traditional NGINX ingress",
+        "Automated image scanning with Trivy in CI/CD pipeline",
+        "Python scripts for building and pushing Docker images to ECR",
+        "TLS certificates automated via cert-manager with Let's Encrypt"
+      ],
+      "github": "REVIEW: Add your GitHub URL once you create the repo"
+    },
+    {
+      "id": 2,
+      "title": "Platform Tools — Kubernetes Infrastructure Toolkit",
+      "description": "Collection of production-ready Kubernetes platform tools deployed via FluxCD and Kustomize, providing observability, autoscaling, secrets management, and centralized logging for EKS clusters.",
+      "techStack": ["Kubernetes", "FluxCD", "Kustomize", "Prometheus", "Grafana", "Thanos", "Elasticsearch", "Fluentd", "Kibana", "Karpenter", "Sealed Secrets", "GitHub Actions"],
+      "highlights": [
+        "Thanos integration for long-term Prometheus metrics storage and multi-cluster querying",
+        "Sealed Secrets for GitOps-safe encrypted secret management in Kubernetes",
+        "EFK stack (Elasticsearch, Fluentd, Kibana) for centralized log aggregation",
+        "Karpenter configuration for intelligent node autoscaling on EKS",
+        "Full FluxCD GitOps setup with Kustomize overlays for environment management"
+      ],
+      "github": "https://github.com/moathsalman4/platform-tools"
+    },
+    {
+      "id": 3,
+      "title": "ProjectX — Modular AWS Infrastructure with Terraform",
+      "description": "Production-grade modular Terraform project that provisions a complete AWS environment from VPC networking to EKS clusters, DocumentDB databases, and application deployments with IRSA-based secrets management.",
+      "techStack": ["Terraform", "AWS EKS", "AWS VPC", "DocumentDB", "IAM", "IRSA", "OIDC", "GitHub Actions", "S3", "DynamoDB"],
+      "highlights": [
+        "Modular Terraform architecture with separate VPC, EKS, and DocumentDB modules",
+        "GitHub Actions CI/CD with OIDC federation for keyless AWS authentication",
+        "VPC CNI prefix delegation configuration for improved pod networking density",
+        "IRSA roles with scoped secrets read policies for secure application access",
+        "Remote state management with S3 backend and DynamoDB locking"
+      ],
+      "github": "https://github.com/moathsalman4/projectx-repo"
+    },
+    {
+      "id": 4,
+      "title": "EKS Monitoring Stack with Thanos",
+      "description": "Deployed and configured a Prometheus and Grafana monitoring stack on EKS with Thanos for long-term metrics retention and high-availability querying across clusters.",
+      "techStack": ["Prometheus", "Grafana", "Thanos", "Kubernetes", "Helm", "FluxCD"],
+      "highlights": [
+        "Thanos sidecar and query components for durable, scalable metrics",
+        "Custom Grafana dashboards for cluster health and workload performance",
+        "Deployed via FluxCD for GitOps-managed observability"
+      ],
+      "github": "https://github.com/moathsalman4/platform-tools"
+    },
+    {
+      "id": 5,
+      "title": "Sealed Secrets for GitOps Workflows",
+      "description": "Implemented Bitnami Sealed Secrets to safely store encrypted Kubernetes secrets in Git, enabling fully automated secret management within FluxCD GitOps pipelines.",
+      "techStack": ["Sealed Secrets", "Kubernetes", "FluxCD", "Kustomize"],
+      "highlights": [
+        "Encrypted secrets committed safely to Git without exposing sensitive data",
+        "Integrated with FluxCD reconciliation for automated secret deployment",
+        "Eliminated manual kubectl secret creation from deployment workflows"
+      ],
+      "github": "https://github.com/moathsalman4/platform-tools"
+    },
+    {
+      "id": 6,
+      "title": "CI/CD Pipeline Consolidation",
+      "description": "Standardized deployment workflows across 8+ microservices by consolidating fragmented CI/CD pipelines into a unified GitHub Actions system at Egencia American Express.",
+      "techStack": ["GitHub Actions", "Docker", "Helm", "AWS EKS", "Terraform"],
+      "highlights": [
+        "Reduced release complexity across 8+ services into a single workflow",
+        "Improved engineering delivery speed by approximately 40%",
+        "Simplified onboarding for development teams"
+      ],
+      "github": null
+    },
+    {
+      "id": 7,
+      "title": "Reusable Terraform Infrastructure Modules",
+      "description": "Built modular Terraform configurations to provision EKS clusters, IAM roles, and remote state infrastructure, turning multi-day environment setup into a repeatable 2-hour process.",
+      "techStack": ["Terraform", "AWS EKS", "IAM", "S3", "DynamoDB"],
+      "highlights": [
+        "Reduced environment provisioning time from days to ~2 hours",
+        "Reusable modules adopted across multiple teams and environments",
+        "Covered EKS clusters, IAM roles, and remote state backends"
+      ],
+      "github": null
+    },
+    {
+      "id": 8,
+      "title": "EFK Centralized Logging Stack",
+      "description": "Deployed a centralized logging pipeline using Elasticsearch, Fluentd, and Kibana across Kubernetes clusters for structured log aggregation, search, and visualization.",
+      "techStack": ["Elasticsearch", "Fluentd", "Kibana", "Kubernetes", "FluxCD", "Kustomize"],
+      "highlights": [
+        "Centralized log collection across staging and production namespaces",
+        "Fluentd daemonsets for node-level log forwarding to Elasticsearch",
+        "Kibana dashboards for real-time log search and troubleshooting"
+      ],
+      "github": "https://github.com/moathsalman4/platform-tools"
+    },
+    {
+      "id": 9,
+      "title": "Karpenter Node Autoscaling",
+      "description": "Configured Karpenter for intelligent, fast node provisioning on EKS, replacing the Kubernetes Cluster Autoscaler with a more responsive and cost-efficient scaling solution.",
+      "techStack": ["Karpenter", "AWS EKS", "Kubernetes", "FluxCD"],
+      "highlights": [
+        "Faster node provisioning compared to Cluster Autoscaler",
+        "Provisioner specs tuned for workload-appropriate instance types",
+        "Deployed and managed via FluxCD GitOps pipeline"
+      ],
+      "github": "https://github.com/moathsalman4/platform-tools"
+    },
+    {
+      "id": 10,
+      "title": "Full-Stack CI/CD Validation App",
+      "description": "Built and deployed a sample Node.js/React application to validate CI/CD workflows and test microservice connectivity end to end.",
+      "techStack": ["Node.js", "React", "Docker", "Kubernetes", "GitHub Actions"],
+      "highlights": [
+        "Served as a proof-of-concept for the consolidated CI/CD pipeline",
+        "Validated microservice connectivity across namespaces",
+        "Used as a reference implementation for development teams"
+      ],
+      "github": null
+    }
+  ]

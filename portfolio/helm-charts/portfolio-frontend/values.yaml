@@ -1,0 +1,21 @@
+replicaCount: 2
+
+image:
+  repository: 665832051028.dkr.ecr.us-east-1.amazonaws.com/portfolio-frontend
+  tag: "latest"
+  pullPolicy: Always
+
+service:
+  type: ClusterIP
+  port: 80
+
+httpRoute:
+  enabled: false
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 64Mi
+  limits:
+    cpu: 150m
+    memory: 128Mi

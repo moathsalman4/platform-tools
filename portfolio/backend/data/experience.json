@@ -1,0 +1,44 @@
+[
+    {
+      "id": 1,
+      "company": "Egencia American Express",
+      "role": "Platform Engineer",
+      "location": "Chicago, IL",
+      "type": "Remote",
+      "startDate": "2023-05",
+      "endDate": null,
+      "bullets": [
+        "Standardized deployment workflows across 8+ services by consolidating fragmented CI/CD pipelines into a single GitHub Actions system, reducing release complexity and improving delivery speed by ~40%",
+        "Built reusable Terraform modules to provision EKS clusters, IAM roles, and remote state infrastructure, reducing environment setup time from days to ~2 hours",
+        "Owned operation and reliability of AWS EKS clusters supporting multiple services across staging and production environments",
+        "Deployed and managed containerized applications using Helm, enabling consistent release patterns across Kubernetes environments",
+        "Implemented namespace-based isolation strategies to improve workload segmentation and environment stability",
+        "Built and deployed a full-stack sample application (Node.js/React) to validate CI/CD workflows and microservice connectivity",
+        "Implemented Prometheus and Grafana monitoring across Kubernetes clusters, creating dashboards and alerts to detect performance issues early",
+        "Integrated AWS Secrets Manager with Kubernetes using IRSA, enabling secure runtime credential access without hardcoded secrets",
+        "Diagnosed and resolved production issues using Kubernetes tooling, CloudWatch, and centralized logging (EFK), improving system reliability",
+        "Resolved critical runtime issues including OOMKilled pods, failed deployments, and configuration errors through resource analysis and debugging"
+      ],
+      "tags": ["AWS", "EKS", "Terraform", "GitHub Actions", "Helm", "Kubernetes", "Prometheus", "Grafana", "EFK", "IRSA"]
+    },
+    {
+      "id": 2,
+      "company": "Abbott",
+      "role": "DevOps Engineer",
+      "location": "Chicago, IL",
+      "type": "On-Site",
+      "startDate": "2020-06",
+      "endDate": "2023-03",
+      "bullets": [
+        "Deployed and managed containerized services on AWS EKS using Helm and GitLab CI pipelines",
+        "Supported and improved staging release processes for 5+ backend services, ensuring consistent and reliable deployments",
+        "Built and deployed a web application stack (Node.js/React) to validate API connectivity and database integration in containerized environments",
+        "Implemented secure infrastructure access using IAM policies and bastion hosts, preventing public exposure of internal systems",
+        "Diagnosed Kubernetes workload issues including pod restarts, OOMKilled events, and resource constraints during deployments",
+        "Worked directly with backend engineers to resolve API failures, database issues, and container runtime errors before production release",
+        "Automated deployment validation and environment checks using Bash and Python, reducing manual effort",
+        "Supported application deployments across AWS-based environments with exposure to Azure cloud integrations, working with containerized workloads and API services"
+      ],
+      "tags": ["AWS", "EKS", "Helm", "GitLab CI", "Kubernetes", "IAM", "Node.js", "React", "Bash", "Python", "Azure", "Docker"]
+    }
+  ]

@@ -1,0 +1,86 @@
+name: Portfolio - Build, Scan & Push
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'portfolio/**'
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::665832051028:role/GitHubActionsPlatformTools
+          aws-region: us-east-1
+
+      - name: Login to Amazon ECR
+        id: ecr-login
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Set image tag
+        id: vars
+        run: echo "SHA_SHORT=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+
+      - name: Build backend image
+        run: |
+          docker build \
+            -t ${{ steps.ecr-login.outputs.registry }}/portfolio-backend:${{ steps.vars.outputs.SHA_SHORT }} \
+            -t ${{ steps.ecr-login.outputs.registry }}/portfolio-backend:latest \
+            -f portfolio/backend/Dockerfile \
+            portfolio/backend/
+
+      - name: Build frontend image
+        run: |
+          docker build \
+            -t ${{ steps.ecr-login.outputs.registry }}/portfolio-frontend:${{ steps.vars.outputs.SHA_SHORT }} \
+            -t ${{ steps.ecr-login.outputs.registry }}/portfolio-frontend:latest \
+            -f portfolio/frontend/Dockerfile \
+            portfolio/frontend/
+
+      - name: Scan backend image
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ steps.ecr-login.outputs.registry }}/portfolio-backend:${{ steps.vars.outputs.SHA_SHORT }}
+          format: table
+          exit-code: 1
+          severity: CRITICAL,HIGH
+
+      - name: Scan frontend image
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ steps.ecr-login.outputs.registry }}/portfolio-frontend:${{ steps.vars.outputs.SHA_SHORT }}
+          format: table
+          exit-code: 1
+          severity: CRITICAL,HIGH
+
+      - name: Push backend image
+        run: |
+          docker push ${{ steps.ecr-login.outputs.registry }}/portfolio-backend:${{ steps.vars.outputs.SHA_SHORT }}
+          docker push ${{ steps.ecr-login.outputs.registry }}/portfolio-backend:latest
+
+      - name: Push frontend image
+        run: |
+          docker push ${{ steps.ecr-login.outputs.registry }}/portfolio-frontend:${{ steps.vars.outputs.SHA_SHORT }}
+          docker push ${{ steps.ecr-login.outputs.registry }}/portfolio-frontend:latest
+
+      - name: Install Helm
+        uses: azure/setup-helm@v3
+
+      - name: Push Helm charts to ECR
+        run: |
+          helm package portfolio/helm-charts/portfolio-backend
+          helm package portfolio/helm-charts/portfolio-frontend
+
+          helm push portfolio-backend-0.1.0.tgz oci://${{ steps.ecr-login.outputs.registry }}
+          helm push portfolio-frontend-0.1.0.tgz oci://${{ steps.ecr-login.outputs.registry }}
