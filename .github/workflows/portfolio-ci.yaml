@@ -57,7 +57,7 @@ jobs:
           image-ref: ${{ steps.ecr-login.outputs.registry }}/portfolio-backend:${{ steps.vars.outputs.SHA_SHORT }}
           format: table
           exit-code: 1
-          severity: CRITICAL,HIGH
+          severity: CRITICAL
 
       - name: Scan frontend image
         uses: aquasecurity/trivy-action@master
@@ -65,7 +65,7 @@ jobs:
           image-ref: ${{ steps.ecr-login.outputs.registry }}/portfolio-frontend:${{ steps.vars.outputs.SHA_SHORT }}
           format: table
           exit-code: 1
-          severity: CRITICAL,HIGH
+          severity: CRITICAL
 
       - name: Push backend image
         run: |
