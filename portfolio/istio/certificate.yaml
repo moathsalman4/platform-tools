@@ -1,0 +1,12 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: portfolio-tls
+  namespace: istio-system
+spec:
+  secretName: portfolio-tls
+  issuerRef:
+    name: letsencrypt-dns01
+    kind: ClusterIssuer
+  dnsNames:
+    - portfolio.grafanamoath.click

@@ -4,7 +4,7 @@ function Experience() {
   const [experience, setExperience] = useState([]);
 
   useEffect(() => {
-    fetch('http://localhost:3001/api/experience')
+    fetch('/api/experience')
       .then(res => res.json())
       .then(data => setExperience(data));
   }, []);

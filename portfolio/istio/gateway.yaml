@@ -1,0 +1,24 @@
+apiVersion: networking.istio.io/v1
+kind: Gateway
+metadata:
+  name: portfolio-gateway
+  namespace: portfolio
+spec:
+  selector:
+    istio: ingressgateway
+  servers:
+    - port:
+        number: 80
+        name: http
+        protocol: HTTP
+      hosts:
+        - portfolio.grafanamoath.click
+    - port:
+        number: 443
+        name: https
+        protocol: HTTPS
+      tls:
+        mode: SIMPLE
+        credentialName: portfolio-tls
+      hosts:
+        - portfolio.grafanamoath.click

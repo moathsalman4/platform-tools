@@ -4,7 +4,7 @@ function Home() {
   const [skills, setSkills] = useState(null);
 
   useEffect(() => {
-    fetch('http://localhost:3001/api/skills')
+    fetch('/api/skills')
       .then(res => res.json())
       .then(data => setSkills(data));
   }, []);
