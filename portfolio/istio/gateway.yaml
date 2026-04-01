@@ -11,8 +11,11 @@ spec:
         number: 80
         name: http
         protocol: HTTP
+      tls:
+        httpsRedirect: true
       hosts:
         - moathsalman.com
+        - www.moathsalman.com
     - port:
         number: 443
         name: https
@@ -22,3 +25,4 @@ spec:
         credentialName: portfolio-tls
       hosts:
         - moathsalman.com
+        - www.moathsalman.com

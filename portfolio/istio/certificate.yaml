@@ -10,3 +10,4 @@ spec:
     kind: ClusterIssuer
   dnsNames:
     - moathsalman.com
+    - www.moathsalman.com

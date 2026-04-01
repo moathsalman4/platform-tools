@@ -6,6 +6,7 @@ metadata:
 spec:
   hosts:
     - moathsalman.com
+    - www.moathsalman.com
   gateways:
     - portfolio-gateway
   http:
