@@ -9,4 +9,4 @@ spec:
     name: letsencrypt-dns01
     kind: ClusterIssuer
   dnsNames:
-    - portfolio.grafanamoath.click
+    - moathsalman.com

@@ -5,7 +5,7 @@ metadata:
   namespace: portfolio
 spec:
   hosts:
-    - portfolio.grafanamoath.click
+    - moathsalman.com
   gateways:
     - portfolio-gateway
   http:

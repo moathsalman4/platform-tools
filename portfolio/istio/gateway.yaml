@@ -12,7 +12,7 @@ spec:
         name: http
         protocol: HTTP
       hosts:
-        - portfolio.grafanamoath.click
+        - moathsalman.com
     - port:
         number: 443
         name: https
@@ -21,4 +21,4 @@ spec:
         mode: SIMPLE
         credentialName: portfolio-tls
       hosts:
-        - portfolio.grafanamoath.click
+        - moathsalman.com
